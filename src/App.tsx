@@ -30,14 +30,14 @@ const Wall = ({ position, rotation }: WallProps) => (
 );
 
 function App() {
-  // const roomBounds = {
-  //   minX: -5,
-  //   maxX: 5,
-  //   minY: -0.5, // Minimum height (ground level)
-  //   maxY: -0.5, // Keep object at floor level
-  //   minZ: -5,
-  //   maxZ: 5,
-  // };
+  const roomBounds = {
+    minX: -5,
+    maxX: 5,
+    minY: -0.5, // Minimum height (ground level)
+    maxY: -0.5, // Keep object at floor level
+    minZ: -5,
+    maxZ: 5,
+  };
   const [selectedObject, setSelectedObject] = useState<THREE.Object3D | null>();
 
   const transformControlsRef = useRef(null);
@@ -50,33 +50,33 @@ function App() {
     setSelectedObject(null);
   };
 
-  // const clampPosition = (object:any) => {
-  //   if (object) {
-  //     const boundingBox = new THREE.Box3().setFromObject(object);
-  //     const size = new THREE.Vector3();
-  //     boundingBox.getSize(size); 
+  const clampPosition = (object: any) => {
+    if (object) {
+      const boundingBox = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      boundingBox.getSize(size);
 
-  //     console.log(boundingBox,"boundingBox")
-  
-  //     const halfWidth = size.x / 2;
-  //     const halfDepth = size.z / 2;
-  
-  //     const position = object.position;
-  //     position.x = Math.max(
-  //       roomBounds.minX + halfWidth,
-  //       Math.min(roomBounds.maxX - halfWidth, position.x)
-  //     );
-  //     position.y = Math.max(
-  //       roomBounds.minY,
-  //       Math.min(roomBounds.maxY, position.y)
-  //     );
-  //     position.z = Math.max(
-  //       roomBounds.minZ + halfDepth,
-  //       Math.min(roomBounds.maxZ - halfDepth, position.z)
-  //     );
-  //   }
-  // };
-  
+      console.log(boundingBox, "boundingBox");
+
+      const halfWidth = size.x / 2;
+      const halfDepth = size.z / 2;
+
+      const position = object.position;
+      position.x = Math.max(
+        roomBounds.minX + halfWidth,
+        Math.min(roomBounds.maxX - halfWidth, position.x)
+      );
+      position.y = Math.max(
+        roomBounds.minY,
+        Math.min(roomBounds.maxY, position.y)
+      );
+      position.z = Math.max(
+        roomBounds.minZ + halfDepth,
+        Math.min(roomBounds.maxZ - halfDepth, position.z)
+      );
+    }
+  };
+
   return (
     <>
       <Canvas
@@ -115,8 +115,8 @@ function App() {
             ref={transformControlsRef}
             object={selectedObject}
             mode="translate"
-            // onObjectChange={() => clampPosition(selectedObject)}
-            showX={true}
+            onObjectChange={() => clampPosition(selectedObject)}
+            // showX={true}
           />
         ) : null}
 
