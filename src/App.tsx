@@ -1,12 +1,13 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Canvas, ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, TransformControls } from "@react-three/drei";
 import Chair from "../public/chair/Chair";
-import Table from "../public/table/Table";
+// import Table from "../public/table/Table";
+import Table1 from "../public/table1/Table1";
 import Sofa from "../public/sofa/Sofa";
-import Tv from "../public/tv/Tv.tsx";
+// import Tv from "../public/tv/Tv.tsx";
 import Floor from "../public/floor/Floor";
-import Walllight from "../public/wallight/Walllight";
+// import Walllight from "../public/wallight/Walllight";
 import * as THREE from "three";
 import "./App.css";
 
@@ -30,6 +31,7 @@ const Wall = ({ position, rotation }: WallProps) => (
 );
 
 function App() {
+  
   const roomBounds = {
     minX: -5,
     maxX: 5,
@@ -39,9 +41,7 @@ function App() {
     maxZ: 5,
   };
   const [selectedObject, setSelectedObject] = useState<THREE.Object3D | null>();
-
-  const transformControlsRef = useRef(null);
-  const orbitControlsRef = useRef(null);
+  const [mode, setMode] = useState<"translate" | "rotate">("translate");
 
   const handleObjectClick = (e: ThreeEvent<MouseEvent>) => {
     setSelectedObject(e.object);
@@ -79,6 +79,17 @@ function App() {
 
   return (
     <>
+      <div className="parent_div">
+        {
+          selectedObject ? <button
+          onClick={() => setMode((prev) => (prev === "translate" ? "rotate" : "translate"))}
+          className="button"
+        >
+          Switch to {mode === "translate" ? "Rotate" : "Translate"}
+        </button> : null
+        }
+        
+      </div>
       <Canvas
         camera={{ position: [5, 5, 5], fov: 50 }}
         flat
@@ -88,18 +99,11 @@ function App() {
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <Floor />
+        {/* <Walllight /> */}
         <Wall position={[0, 2, -5]} rotation={[0, 0, 0]} />
         <Wall position={[0, 2, 5]} rotation={[0, Math.PI, 0]} />
         <Wall position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} />
         <Wall position={[5, 2, 0]} rotation={[0, -Math.PI / 2, 0]} />
-        <mesh
-          onClick={(e) => {
-            e.stopPropagation();
-            handleObjectClick(e);
-          }}
-        >
-          <Walllight />
-        </mesh>
         <Ceiling />
         <mesh
           onClick={(e) => {
@@ -112,11 +116,12 @@ function App() {
 
         {selectedObject ? (
           <TransformControls
-            ref={transformControlsRef}
             object={selectedObject}
-            mode="translate"
+            mode={mode}
             onObjectChange={() => clampPosition(selectedObject)}
-            // showX={true}
+            showY={mode === "rotate" ? true : mode === "translate" ? false : false}
+            showX={mode === "rotate" ? false : true}
+            showZ={mode === "rotate" ? false : true}
           />
         ) : null}
 
@@ -125,8 +130,9 @@ function App() {
             e.stopPropagation();
             handleObjectClick(e);
           }}
+          position={[0, 0.05, 0]}
         >
-          <Table />
+          <Table1 />
         </mesh>
         <mesh
           onClick={(e) => {
@@ -136,9 +142,7 @@ function App() {
         >
           <Sofa />
         </mesh>
-        <Tv />
         <OrbitControls
-          ref={orbitControlsRef}
           enableZoom={true}
           enableRotate={!selectedObject}
           enablePan={!selectedObject}
