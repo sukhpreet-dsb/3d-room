@@ -7,7 +7,7 @@ import Table1 from "../public/table1/Table1";
 import Sofa from "../public/sofa/Sofa";
 // import Tv from "../public/tv/Tv.tsx";
 import Floor from "../public/floor/Floor";
-// import Walllight from "../public/wallight/Walllight";
+import Walllight from "../public/wallight/Walllight";
 import * as THREE from "three";
 import "./App.css";
 
@@ -31,7 +31,6 @@ const Wall = ({ position, rotation }: WallProps) => (
 );
 
 function App() {
-  
   const roomBounds = {
     minX: -5,
     maxX: 5,
@@ -40,6 +39,14 @@ function App() {
     minZ: -5,
     maxZ: 5,
   };
+
+  // const wallBounds = {
+  //   minY: 1, // Min height for wall objects
+  //   maxY: 4, // Max height for wall objects
+  //   minZ: -5.5,
+  //   maxZ: 4.5,
+  // };
+
   const [selectedObject, setSelectedObject] = useState<THREE.Object3D | null>();
   const [mode, setMode] = useState<"translate" | "rotate">("translate");
 
@@ -55,8 +62,6 @@ function App() {
       const boundingBox = new THREE.Box3().setFromObject(object);
       const size = new THREE.Vector3();
       boundingBox.getSize(size);
-
-      console.log(boundingBox, "boundingBox");
 
       const halfWidth = size.x / 2;
       const halfDepth = size.z / 2;
@@ -77,18 +82,63 @@ function App() {
     }
   };
 
+  // Clamp for wall objects like Walllight
+  // const clampWallPosition = (object: any) => {
+  //   if (object) {
+  //     const boundingBox = new THREE.Box3().setFromObject(object);
+  //     const size = new THREE.Vector3();
+  //     boundingBox.getSize(size);
+
+  //     const halfWidth = size.x / 2;
+  //     const halfDepth = size.z / 2;
+
+  //     const position = object.position;
+  //     position.x = Math.max(
+  //       roomBounds.minX + halfWidth,
+  //       Math.min(roomBounds.maxX - halfWidth, position.x)
+  //     );
+  //     position.y = Math.max(
+  //       wallBounds.minY,
+  //       Math.min(wallBounds.maxY, position.y)
+  //     );
+  //     position.z = Math.max(
+  //       wallBounds.minZ + halfDepth,
+  //       Math.min(wallBounds.maxZ - halfDepth, position.z)
+  //     );
+  //   }
+  // };
+  const clampWallPosition = (object: any) => {
+    console.log("entering the console");
+    if (object) {
+      const boundingBox = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      boundingBox.getSize(size);
+
+      // const halfWidth = size.x / 2;
+      // const halfDepth = size.z / 2;
+
+      const position = object.position;
+
+      // Free movement on the X-axis (no clamping)
+      position.x = position.x;
+
+      // Y and Z axes are already free, no changes made
+    }
+  };
+
   return (
     <>
       <div className="parent_div">
-        {
-          selectedObject ? <button
-          onClick={() => setMode((prev) => (prev === "translate" ? "rotate" : "translate"))}
-          className="button"
-        >
-          Switch to {mode === "translate" ? "Rotate" : "Translate"}
-        </button> : null
-        }
-        
+        {selectedObject ? (
+          <button
+            onClick={() =>
+              setMode((prev) => (prev === "translate" ? "rotate" : "translate"))
+            }
+            className="button"
+          >
+            Switch to {mode === "translate" ? "Rotate" : "Translate"}
+          </button>
+        ) : null}
       </div>
       <Canvas
         camera={{ position: [5, 5, 5], fov: 50 }}
@@ -99,7 +149,15 @@ function App() {
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <Floor />
-        {/* <Walllight /> */}
+        <mesh
+          onClick={(e) => {
+            e.stopPropagation();
+            handleObjectClick(e);
+          }}
+          name=""
+        >
+          <Walllight name="Wall" />
+        </mesh>
         <Wall position={[0, 2, -5]} rotation={[0, 0, 0]} />
         <Wall position={[0, 2, 5]} rotation={[0, Math.PI, 0]} />
         <Wall position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} />
@@ -118,8 +176,20 @@ function App() {
           <TransformControls
             object={selectedObject}
             mode={mode}
-            onObjectChange={() => clampPosition(selectedObject)}
-            showY={mode === "rotate" ? true : mode === "translate" ? false : false}
+            onObjectChange={() => {
+              if (selectedObject && selectedObject?.parent?.name === "Wall") {
+                clampWallPosition(selectedObject);
+              } else {
+                clampPosition(selectedObject);
+              }
+            }}
+            showY={
+              selectedObject?.parent?.name === "Wall"
+                ? true
+                : mode === "rotate"
+                ? true
+                : false
+            }
             showX={mode === "rotate" ? false : true}
             showZ={mode === "rotate" ? false : true}
           />
