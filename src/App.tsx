@@ -4,7 +4,7 @@ import { OrbitControls, TransformControls } from "@react-three/drei";
 import Chair from "../public/chair/Chair";
 import Table1 from "../public/table1/Table1";
 import Sofa from "../public/sofa/Sofa";
-import Tv from "../public/tv/Tv.tsx";
+// import Tv from "../public/tv/Tv.tsx";
 import Floor from "../public/floor/Floor";
 import Walllight from "../public/wallight/Walllight";
 import * as THREE from "three";
@@ -47,7 +47,6 @@ function App() {
     minY: 1,
     maxY: 3,
   };
-  
 
   const [selectedObject, setSelectedObject] = useState<THREE.Object3D | null>();
   const [mode, setMode] = useState<"translate" | "rotate">("translate");
@@ -89,9 +88,9 @@ function App() {
       const boundingBox = new THREE.Box3().setFromObject(object);
       const size = new THREE.Vector3();
       boundingBox.getSize(size);
-  
+
       const position = object.position;
-  
+
       position.x = Math.max(
         wallBounds.minX,
         Math.min(wallBounds.maxX, position.x)
@@ -106,7 +105,6 @@ function App() {
       );
     }
   };
-  
 
   return (
     <>
