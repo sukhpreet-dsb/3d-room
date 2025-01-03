@@ -1,11 +1,8 @@
-
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import fabricData from "../../src/assets/room.json";
-import shape from "../../src/assets/shape.json";
-import rectangle from "../../src/assets/rectangle.json";
+import data from "../../src/assets/data.json";
 
 type ShapeObject = {
   type: string;
@@ -23,16 +20,72 @@ type ShapeObject = {
   skewY: number;
   flipX: boolean;
   flipY: boolean;
-}
+  id: string;
+};
 
 type GroupObject = {
   type: string;
   objects: ShapeObject[];
-}
+};
 
 type CanvasObject = {
   version: string;
   objects: GroupObject[];
+};
+
+function createWindowMesh({
+  width,
+  height,
+  position,
+  rotation,
+}: {
+  width: number;
+  height: number;
+  position: [number, number, number];
+  rotation: [number, number, number];
+}) {
+  const geometry = new THREE.BoxGeometry(width, height, 10);
+  const material = new THREE.MeshStandardMaterial({
+    color: "white",
+    opacity: 1,
+    transparent: true,
+    side: THREE.DoubleSide,
+  });
+  const windowMesh = new THREE.Mesh(geometry, material);
+
+  windowMesh.position.set(...position);
+  windowMesh.rotation.set(...rotation);
+
+  return windowMesh;
+}
+
+function createDoorMesh({
+  width,
+  height,
+  position,
+  rotation,
+}: {
+  width: number;
+  height: number;
+  position: [number, number, number];
+  rotation: [number, number, number];
+}) {
+  // Door geometry: BoxGeometry (width, height, thickness)
+  const geometry = new THREE.BoxGeometry(width, height, 10); // Thin door with depth of 10
+  const material = new THREE.MeshStandardMaterial({
+    color: "brown", // Default brown color for the door
+    opacity: 1,
+    transparent: true,
+    side: THREE.DoubleSide, // Ensure both sides of the door are visible
+  });
+
+  const doorMesh = new THREE.Mesh(geometry, material);
+
+  // Set the position and rotation of the door mesh
+  doorMesh.position.set(...position);
+  doorMesh.rotation.set(...rotation);
+
+  return doorMesh;
 }
 
 // 2D Polygon -> Floor Mesh (or 2D shape)
@@ -113,7 +166,7 @@ function createFloorMesh(
 
   mesh.position.x = 0;
   mesh.position.y = 0.1;
-  mesh.position.z = 1115;
+  mesh.position.z = 970;
 
   return mesh;
 }
@@ -216,8 +269,6 @@ function createWallMesh({
   return wallMesh;
 }
 
-
-
 /**
  * STEP 3: React component to parse Fabric JSON and produce 3D meshes.
  */
@@ -243,6 +294,8 @@ function Scene({
         skewY: number;
         flipX: boolean;
         flipY: boolean;
+        isWindow: boolean;
+        id: string;
       }>;
     }>;
   };
@@ -275,6 +328,8 @@ function Scene({
               skewY,
               flipX,
               flipY,
+              isWindow,
+              id,
             } = subObj;
             if (!points || points.length < 2) return;
 
@@ -316,12 +371,47 @@ function Scene({
                 skewX,
                 skewY,
                 flipX,
-                flipY
+                flipY,
               });
               groupMeshes.push(wallMesh);
             }
+            if (true && id === "0727c87d-1b0f-4159-a18a-7f4d8d187292") {
+              console.log(points, "working");
+              const midX = (points[0].x + points[1].x) / 2;
+              const midY = (points[0].y + points[1].y) / 2;
+
+              console.log(midX, midY);
+
+              const windowMesh = createWindowMesh({
+                width: 50,
+                height: 50,
+                position: [midX, 50, midY], // Adjust height as needed
+                rotation: [
+                  0,
+                  -Math.atan2(
+                    points[1].y - points[0].y,
+                    points[1].x - points[0].x
+                  ),
+                  0,
+                ],
+              });
+
+              groupMeshes.push(windowMesh);
+            }
+            if (true && id === "c9c56b44-5247-4ac8-9d6e-fd46994c9ec2") {
+              const midX = (points[0].x + points[1].x) / 2;
+              const midY = (points[0].y + points[1].y) / 2;
+              const door = createDoorMesh({
+                width: 30,
+                height: 80,
+                position: [midX, 40, midY], // Position of the door in the world space
+                rotation: [0, Math.PI, 0], // Rotation (in radians)
+              });
+
+              // Add the door to the scene
+              groupMeshes.push(door);
+            }
           }
-          // If you want to handle i-text, do it here
         });
       }
     });
@@ -338,64 +428,28 @@ function Scene({
   );
 }
 
-export default function Room() {
-  const [selectedData, setSelectedData] = useState<CanvasObject>(fabricData);
+const Window = () => {
+  return (
+    <mesh position={[0, 1, 0]}>
+      {/* Geometry for the window */}
+      <planeGeometry args={[100, 100]} /> {/* width = 2, height = 3 */}
+      {/* Transparent glass-like material */}
+      <meshStandardMaterial
+        color="lightblue"
+        opacity={0.5}
+        transparent
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+};
+
+export default function RoomWithDoorWindow() {
   return (
     <>
-      <div>
-        {/* Sidebar */}
-        <div
-          style={{
-            width: "200px",
-            backgroundColor: "#f0f0f0",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            position: "absolute",
-            bottom: "0px",
-            height: "100vh",
-            zIndex: "1 ",
-          }}
-        >
-          <button
-            onClick={() => setSelectedData(fabricData)}
-            style={{
-              padding: "15px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              border: "1px solid black",
-            }}
-          >
-            Cubic Model
-          </button>
-          <button
-            onClick={() => setSelectedData(shape)}
-            style={{
-              padding: "15px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              border: "1px solid black",
-            }}
-          >
-            L Shape Model
-          </button>
-          <button
-            onClick={() => setSelectedData(rectangle)}
-            style={{
-              padding: "15px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              border: "1px solid black",
-            }}
-          >
-            Rectangle Model
-          </button>
-        </div>
-      </div>
       <div style={{ flex: 1 }}>
         <Canvas
-          camera={{ position: [770, 600, 500], fov: 50, near: 0.1, far: 10000 }}
+          camera={{ position: [350, 990, 990], fov: 50, near: 0.1, far: 10000 }}
           style={{ width: "100vw", height: "100vh" }}
         >
           <ambientLight intensity={1} />
@@ -404,12 +458,13 @@ export default function Room() {
             position={[5, 0, 2]}
             castShadow={true}
           />
-          <Scene data={selectedData} />
+          <Scene data={data} />
+          {/* <Window /> */}
           <OrbitControls
-            target={[760, 100, 500]}
+            target={[360, 100, 400]}
             maxDistance={1000}
             enableRotate={true}
-            autoRotate={true}
+            // autoRotate={true}
           />
         </Canvas>
       </div>
